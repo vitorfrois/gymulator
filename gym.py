@@ -28,6 +28,7 @@ async def init_live(progress_table, job_progress):
                     job_progress.advance(job.id)
 
             completed = sum(task.completed for task in job_progress.tasks)
+            # overall_progress.update(overall_task, completed=completed)
 
 class Gym:
     def __init__(self):
