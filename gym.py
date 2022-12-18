@@ -6,12 +6,6 @@ from rich.progress import track, Progress, SpinnerColumn, BarColumn, TextColumn
 from rich.table import Table
 from rich.live import Live
 from rich.panel import Panel
-import asyncio
-
-
-table = Table()
-progress = Progress()
-live = Live()
 
 playing = True
 
@@ -19,16 +13,40 @@ def create_track(reps):
     for step in track(range(reps*4)):
         time.sleep(0.5)
 
-async def init_live(progress_table, job_progress):
-    with Live(progress_table, refresh_per_second=10):
+job_progress = Progress(
+    "{task.description}",
+    SpinnerColumn(),
+    BarColumn(),
+    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+)
+
+
+def generate_bar(person='Pessoa', reps=5) -> Progress:
+    # job_progress.add_task("[green]Cooking")
+    job_progress.add_task(f"{person} treinando... ", total=reps, visible=True)
+    return job_progress
+
+progress_table = Table().grid()
+progress_table.add_row(
+    Panel.fit("GYMULATOR")
+)
+progress_table.add_row(
+    Panel.fit(job_progress, title="[b]Jobs", border_style="red", padding=(1, 2)),
+)
+
+live = Live(progress_table, refresh_per_second=10)
+
+def init_live():
+    with live:
         while playing:
-            time.sleep(0.1)
+            time.sleep(0.5)
             for job in job_progress.tasks:
                 if not job.finished:
-                    job_progress.advance(job.id)
+                    job_progress.advance(job.id, advance=0.2)
+                else:
+                    job_progress.remove_task(job.id)
 
-            completed = sum(task.completed for task in job_progress.tasks)
-            # overall_progress.update(overall_task, completed=completed)
+
 
 class Gym:
     def __init__(self):
@@ -47,24 +65,9 @@ class Gym:
 
         self.semaphores['leg_press'] = Semaphore(self.n_machines['leg_press'])
         self.semaphores['bench_press'] = Semaphore(self.n_machines['bench_press'])
-        
-        job_progress = Progress(
-            "{task.description}",
-            SpinnerColumn(),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        )
 
-        total = sum(task.total for task in job_progress.tasks)
-        overall_progress = Progress()
-        overall_task = overall_progress.add_task("All Jobs", total=int(total))
-
-        self.progress_table = Table.grid()
-        self.progress_table.add_row(
-            Panel.fit(job_progress, title="[b]Jobs", border_style="red", padding=(1, 2)),
-        )
-        asyncio.run(init_live(self.progress_table, job_progress))
-
+        thread = Thread(target=init_live)
+        thread.start()
 
     def start_training(self, person_name: str):
         # This will be the target for maromba's thread. It should execute various
@@ -95,22 +98,9 @@ class Gym:
         print(f"{person_name} will be doing {reps} reps of {display_name}", end='\t')
         print(f"{semaphore._value}/{n_machines} available.")
 
-        # Execute repetitions
-        # with self.live:  # update 4 times a second to feel fluid
-        #     self.live.update(create_track(reps))
-
-        # with live:
-        #     with Progress() as progress:
-        #         task_id = progress.add_task("Maromba trein... ", total=reps, visible=True)
-        #         while not progress.finished:
-        #             progress.update(task_id, advance=0.5)
-        #             time.sleep(0.5)
-        # for _ in track(range(reps)): 
-        #     progress.update(task_id, advance=0.1)
-        #     time.sleep(0.5)
-        job1 = job_progress.add_task("[green]Maromba 1", total=reps)
+        job_progress.update(generate_bar(person_name, reps))
+        
         semaphore.release()
-
 
         print(f"{person_name} has finished using {display_name}", end='\t\t')
         print(f"{semaphore._value}/{n_machines} available.")
