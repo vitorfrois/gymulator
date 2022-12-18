@@ -2,6 +2,7 @@ from threading import Semaphore, Thread
 import time
 from random import randint, choice
 from bcolors import bcolors
+
 from rich.progress import track, Progress
 from rich.table import Table
 from rich.live import Live
@@ -17,7 +18,8 @@ class Gym:
     def __init__(self):
         self.available_machines = [
             "leg_press", 
-            "bench_press"
+            "bench_press",
+            "squat"
         ]
 
         self.n_machines: dict[str, int] = {}
@@ -27,9 +29,11 @@ class Gym:
         # Initial machines
         self.n_machines['leg_press'] = 1
         self.n_machines['bench_press'] = 2
+        self.n_machines['squat'] = 2
 
         self.semaphores['leg_press'] = Semaphore(self.n_machines['leg_press'])
         self.semaphores['bench_press'] = Semaphore(self.n_machines['bench_press'])
+        self.semaphores['squat'] = Semaphore(self.n_machines['squat'])
         self.live = Live()
 
     def start_training(self, person_name: str):
@@ -63,9 +67,11 @@ class Gym:
 
         # Execute repetitions
         # with live:  # update 4 times a second to feel fluid
-        self.live.update(create_track(reps))
+        # self.live.update(create_track(reps))
             # do_step(step)
         # for _ in range(reps): 
+        for _ in range(reps*4):
+            time.sleep(0.5)
 
         semaphore.release()
 
