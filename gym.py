@@ -2,16 +2,32 @@ from threading import Semaphore, Thread
 import time
 from random import randint, choice
 from bcolors import bcolors
-from rich.progress import track, Progress
+from rich.progress import track, Progress, SpinnerColumn, BarColumn, TextColumn
 from rich.table import Table
 from rich.live import Live
+from rich.panel import Panel
+import asyncio
 
 
 table = Table()
+progress = Progress()
+live = Live()
+
+playing = True
 
 def create_track(reps):
     for step in track(range(reps*4)):
         time.sleep(0.5)
+
+async def init_live(progress_table, job_progress):
+    with Live(progress_table, refresh_per_second=10):
+        while playing:
+            time.sleep(0.1)
+            for job in job_progress.tasks:
+                if not job.finished:
+                    job_progress.advance(job.id)
+
+            completed = sum(task.completed for task in job_progress.tasks)
 
 class Gym:
     def __init__(self):
@@ -30,7 +46,24 @@ class Gym:
 
         self.semaphores['leg_press'] = Semaphore(self.n_machines['leg_press'])
         self.semaphores['bench_press'] = Semaphore(self.n_machines['bench_press'])
-        self.live = Live()
+        
+        job_progress = Progress(
+            "{task.description}",
+            SpinnerColumn(),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        )
+
+        total = sum(task.total for task in job_progress.tasks)
+        overall_progress = Progress()
+        overall_task = overall_progress.add_task("All Jobs", total=int(total))
+
+        self.progress_table = Table.grid()
+        self.progress_table.add_row(
+            Panel.fit(job_progress, title="[b]Jobs", border_style="red", padding=(1, 2)),
+        )
+        asyncio.run(init_live(self.progress_table, job_progress))
+
 
     def start_training(self, person_name: str):
         # This will be the target for maromba's thread. It should execute various
@@ -62,12 +95,21 @@ class Gym:
         print(f"{semaphore._value}/{n_machines} available.")
 
         # Execute repetitions
-        # with live:  # update 4 times a second to feel fluid
-        self.live.update(create_track(reps))
-            # do_step(step)
-        # for _ in range(reps): 
+        # with self.live:  # update 4 times a second to feel fluid
+        #     self.live.update(create_track(reps))
 
+        # with live:
+        #     with Progress() as progress:
+        #         task_id = progress.add_task("Maromba trein... ", total=reps, visible=True)
+        #         while not progress.finished:
+        #             progress.update(task_id, advance=0.5)
+        #             time.sleep(0.5)
+        # for _ in track(range(reps)): 
+        #     progress.update(task_id, advance=0.1)
+        #     time.sleep(0.5)
+        job1 = job_progress.add_task("[green]Maromba 1", total=reps)
         semaphore.release()
+
 
         print(f"{person_name} has finished using {display_name}", end='\t\t')
         print(f"{semaphore._value}/{n_machines} available.")
