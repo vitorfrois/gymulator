@@ -2,17 +2,16 @@ from threading import Semaphore, Thread
 import time
 from random import randint, choice
 from bcolors import bcolors
-from rich.progress import track, Progress, SpinnerColumn, BarColumn, TextColumn
+from rich.progress import Progress, BarColumn, TextColumn
 from rich.table import Table
 from rich.live import Live
 from rich.panel import Panel
-from rich.console import Console
 
+REP_INTERVAL = 2 # seconds
 playing = True
 
 job_progress = Progress(
     "{task.description}",
-    # SpinnerColumn(),
     BarColumn(),
     TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
 )
@@ -21,45 +20,50 @@ table = Progress(
     "{task.description}"
     )
 
-def generate_bar(person='Pessoa', reps=5) -> Progress:
+def generate_bar(person='Pessoa', reps=5, machine='MachineName') -> Progress:
     # job_progress.add_task("[green]Cooking")
-    job_progress.add_task(f"{person} treinando... ", total=reps, visible=True)
+    job_progress.add_task(f"{person} using {machine} ", total=reps, visible=True)
     return job_progress
 
-def recreate_table(available_machines, n_machines) -> Progress:
-    for task in table.tasks:
-        table.remove_task(task)
-    for elem in available_machines:
-        table.add_task(elem + " " + 
-            str(n_machines[elem]) + "/" + 
-            str(available_machines[elem]))
-    return table
-
-console = Table().grid()
+console = Table()
+consoleExc = Table()
+consoleFim = Table()
 
 progress_table = Table(expand=False).grid()
 progress_table.add_row(
     Panel.fit("GYMULATOR"),
     Panel.fit(table, width=30, title="Available Machines", border_style="red")
 )
+
 progress_table.add_row(
     Panel.fit(job_progress, width=50, title="[b]Jobs", border_style="red"),
-    # Panel.fit(console, width=80, title="[b]Log", border_style="red")
+    Panel.fit(table, width=50, title="Available Machines", border_style="red"),
+)
+progress_table.add_row(
+    Panel.fit(console, width=50, title="[b]People Started", border_style="red"),
+    Panel.fit(consoleExc, width=50, title="[b]Console Exercise", border_style="red")
 )
 
-live = Live(progress_table, refresh_per_second=10)
-
+def recreate_table(available_machines, n_machines, semaphores):
+    for task in table.tasks:
+        table.remove_task(task.id)
+    for elem in available_machines:
+        table.add_task(elem + " " + str(semaphores[elem]._value) + " / " + str(n_machines[elem]))
+    return table  
 
 def init_live():
+    startTask = False
+    live = Live(progress_table, refresh_per_second=10)
     with live:
-        while playing:
-            time.sleep(1)
+        while playing and (len(job_progress.tasks) > 0 or not startTask):
+            time.sleep(REP_INTERVAL)
             for job in job_progress.tasks:
+                startTask = True
                 if not job.finished:
-                    job_progress.advance(job.id, advance=0.5)
+                    job_progress.advance(job.id, advance=1)
                 else:
                     job_progress.remove_task(job.id)
-                    #live.update(generate_table())
+
 class Gym:
     def __init__(self):
         self.available_machines = [
@@ -78,6 +82,11 @@ class Gym:
         self.semaphores['leg_press'] = Semaphore(self.n_machines['leg_press'])
         self.semaphores['bench_press'] = Semaphore(self.n_machines['bench_press'])
 
+        try:
+            table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
+        except:
+            pass
+
         thread = Thread(target=init_live)
         thread.start()
 
@@ -85,18 +94,15 @@ class Gym:
         # This will be the target for maromba's thread. It should execute various
         # exercises during the existence of that maromba.
         n_exercices = randint(1, len(self.available_machines))
-        # print(bcolors.WARNING + f"{person_name} has just started and will be doing {n_exercices} exercises." + bcolors.ENDC)
         console.add_row(f"{person_name} has just started and will be doing {n_exercices} exercises.")
 
         for _ in range(n_exercices):
             machine = choice(self.available_machines)
-            # print(bcolors.OKBLUE + f"{person_name} wants to use {machine}!" + bcolors.ENDC)
             console.add_row(f"{person_name} wants to use {machine}!")
             
             exercise = Thread(target=self.use_machine , args=(machine, person_name,))
             exercise.start()
-        # console = Table()
-
+            exercise.join()
 
     def use_machine(self, machine: str, person_name: str):
         if machine not in self.n_machines:
@@ -111,30 +117,26 @@ class Gym:
 
         reps = randint(2, 4)
         
-        # print(f"{person_name} will be doing {reps} reps of {display_name}", end='\t')
-        # print(f"{semaphore._value}/{n_machines} available.")
-        console.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
-        console.add_row(f"{semaphore._value}/{n_machines} available.")
-        
+        consoleExc.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
         
         try:
-            job_progress.update(generate_bar(person_name, reps))
-            table.update(recreate_table(self.available_machines, self.n_machines))
+            table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
+        except:
+            pass
+
+        try:
+            job_progress.update(generate_bar(person_name, reps, display_name))
         except:
             pass
 
         for _ in range(reps):
-            time.sleep(0.2)
+            time.sleep(REP_INTERVAL)
 
         semaphore.release()
 
         try:
-            table.update(recreate_table(self.available_machines, self.n_machines))
+            table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
         except:
             pass
 
-        # print(f"{person_name} has finished using {display_name}", end='\t\t')
-        # print(f"{semaphore._value}/{n_machines} available.")
-        console.add_row(f"{person_name} has finished using {display_name}")
-        console.add_row(f"{semaphore._value}/{n_machines} available.")
-
+        consoleExc.add_row(f"{person_name} finished using {display_name}")
