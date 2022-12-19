@@ -44,11 +44,13 @@ progress_table.add_row(
 
 
 def recreate_table(available_machines, n_machines, semaphores):
-    print("teste")
+    print(available_machines)
+    print(n_machines)
+    print(semaphores, "\n\n")
     for task in table.tasks:
         table.remove_task(task)
     for elem in available_machines:
-        table.add_task(elem + " " + str(n_machines[elem] - semaphores[elem]._value) + " / " + str(n_machines[elem]))
+        table.add_task(elem + " " + str(semaphores[elem]._value) + " / " + str(n_machines[elem]))
     return table
                
 
@@ -80,6 +82,11 @@ class Gym:
 
         self.semaphores['leg_press'] = Semaphore(self.n_machines['leg_press'])
         self.semaphores['bench_press'] = Semaphore(self.n_machines['bench_press'])
+
+        try:
+            table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
+        except:
+            pass
 
         thread = Thread(target=init_live)
         thread.start()
@@ -129,8 +136,10 @@ class Gym:
             time.sleep(REP_INTERVAL)
 
         semaphore.release()
+        # table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
 
         try:
+            # a = 10
             table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
         except:
             pass
