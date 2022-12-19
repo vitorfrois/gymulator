@@ -106,7 +106,7 @@ class Gym:
     def start_training(self, person_name: str):
         # This will be the target for maromba's thread. It should execute various
         # exercises during the existence of that maromba.
-        n_exercices = randint(1, len(self.available_machines))
+        n_exercices = randint(1, int(len(self.available_machines)/3))
         console.add_row(f"{person_name} has just started and will be doing {n_exercices} exercises.")
 
         for _ in range(n_exercices):
