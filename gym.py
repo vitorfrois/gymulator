@@ -6,6 +6,8 @@ from rich.progress import Progress, BarColumn, TextColumn
 from rich.table import Table
 from rich.live import Live
 from rich.panel import Panel
+import random
+
 
 REP_INTERVAL = 2 # seconds
 playing = True
@@ -20,10 +22,8 @@ table = Progress(
     "{task.description}"
     )
 
-level = Progress(
-    "Level: ",
-    BarColumn(),
-    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+level_table = Progress(
+    "{task.description}"
 )
 
 
@@ -34,16 +34,16 @@ consoleFim = Table().grid()
 progress_table = Table(expand=False).grid()
 progress_table.add_row(
     Panel.fit("G Y M U L A T O R"),
-    # Panel.fit(level, width=50, title="[b]Level", border_style="red")
+    Panel.fit(level_table, width=50, title="[b]Level", border_style="green")
 )
 
 progress_table.add_row(
-    Panel.fit(job_progress, width=50, title="[b]Jobs", border_style="red"),
-    Panel.fit(table, width=50, title="Available Machines", border_style="red"),
+    Panel.fit(job_progress, width=50, title="[b]Training", border_style="red"),
+    Panel.fit(table, width=50, title="[b]Available Machines", border_style="red"),
 )
 progress_table.add_row(
-    Panel.fit(console, width=50, title="[b]People Started", border_style="yellow"),
-    Panel.fit(consoleExc, width=50, title="[b]Console Exercise", border_style="yellow")
+    Panel.fit(console, width=50, title="[b]Start Log", border_style="yellow"),
+    Panel.fit(consoleExc, width=50, title="[b]Finish Log", border_style="yellow")
 )
 
 def generate_bar(person='Pessoa', reps=5, machine='MachineName') -> Progress:
@@ -56,7 +56,13 @@ def recreate_table(available_machines, n_machines, semaphores):
         table.remove_task(task.id)
     for elem in available_machines:
         table.add_task(elem.replace("_", " ") + " " + str(semaphores[elem]._value) + " / " + str(n_machines[elem]))
-    return table  
+    return table 
+
+def update_level_table(level):
+    for task in level_table.tasks:
+        level_table.remove_task(task.id)
+    level_table.add_task(f" {level} ", total=level)
+    return level_table
 
 def init_live():
     startTask = False
@@ -111,12 +117,18 @@ class Gym:
         thread = Thread(target=init_live)
         thread.start()
 
-        self.level = 1
+        self.level = 0
 
     def uplevel(self):
         self.level += 1
-        for machine in self.n_machines:
-            machine += random.randint(1)
+        # for machine in self.n_machines:
+        #     machine += randint(0,1)
+        global REP_INTERVAL
+        REP_INTERVAL /= 1.1
+        try:
+            level_table.update(update_level_table(self.level))
+        except:
+            pass
 
     def start_training(self, person_name: str):
         # This will be the target for maromba's thread. It should execute various
