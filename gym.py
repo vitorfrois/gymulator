@@ -25,9 +25,9 @@ def generate_bar(person='Pessoa', reps=5, machine='MachineName') -> Progress:
     job_progress.add_task(f"{person} using {machine} ", total=reps, visible=True)
     return job_progress
 
-console = Table()
-consoleExc = Table()
-consoleFim = Table()
+console = Table().grid()
+consoleExc = Table().grid()
+consoleFim = Table().grid()
 
 progress_table = Table(expand=False).grid()
 progress_table.add_row(
