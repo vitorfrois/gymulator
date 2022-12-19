@@ -42,11 +42,12 @@ progress_table.add_row(
 
 live = Live(progress_table, refresh_per_second=10)
 
-def recreate_table(available_machines, n_machines):
+def recreate_table(available_machines, n_machines, semaphores):
+    print("teste")
     for task in table.tasks:
         table.remove_task(task)
     for elem in available_machines:
-        table.add_task(elem + " " + str(n_machines[elem]) + "/ total")
+        table.add_task(elem + " " + str(n_machines[elem] - semaphores[elem]._value) + " / " + str(n_machines[elem]))
     return table
                
 
@@ -116,10 +117,9 @@ class Gym:
         console.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
         console.add_row(f"{semaphore._value}/{n_machines} available.")
         
-        table.update(recreate_table(self.available_machines, self.n_machines))
         try:
             job_progress.update(generate_bar(person_name, reps))
-            
+            table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
         except:
             pass
         for _ in range(reps):
@@ -127,7 +127,7 @@ class Gym:
         semaphore.release()
 
         try:
-            table.update(recreate_table(self.available_machines, self.n_machines))
+            table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
         except:
             pass
 
