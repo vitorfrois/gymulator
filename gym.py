@@ -26,19 +26,19 @@ def generate_bar(person='Pessoa', reps=5) -> Progress:
     job_progress.add_task(f"{person} treinando... ", total=reps, visible=True)
     return job_progress
 
-console = Table()
+console = Table().grid()
 
 progress_table = Table(expand=False).grid()
 progress_table.add_row(
-    Panel.fit("GYMULATOR")
+    Panel.fit("GYMULATOR"),
+    Panel.fit(table, width=30, title="Available Machines", border_style="red")
 )
 progress_table.add_row(
     Panel.fit(job_progress, width=50, title="[b]Jobs", border_style="red"),
-    Panel.fit(table, width=30, title="Available Machines", border_style="red"),
-)
-progress_table.add_row(
     Panel.fit(console, width=80, title="[b]Log", border_style="red")
 )
+# progress_table.add_row(
+# )
 
 # def generate_table():
 #     """Make a new table."""
