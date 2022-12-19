@@ -48,7 +48,7 @@ def recreate_table(available_machines, n_machines, semaphores):
     for task in table.tasks:
         table.remove_task(task.id)
     for elem in available_machines:
-        table.add_task(elem + " " + str(semaphores[elem]._value) + " / " + str(n_machines[elem]))
+        table.add_task(elem.replace("_", " ") + " " + str(semaphores[elem]._value) + " / " + str(n_machines[elem]))
     return table  
 
 def init_live():
@@ -67,8 +67,15 @@ def init_live():
 class Gym:
     def __init__(self):
         self.available_machines = [
-            "leg_press", 
-            "bench_press"
+            "Leg_press", 
+            "Bench_press",
+            "Pulley",
+            "Squat",
+            "Leg_extension",
+            "Scott_machine",
+            "Pulldown",
+            "Treadmill",
+            "Bike",
         ]
 
         self.n_machines: dict[str, int] = {}
@@ -76,11 +83,18 @@ class Gym:
         self.semaphores: dict[str, Semaphore] = {}
 
         # Initial machines
-        self.n_machines['leg_press'] = 1
-        self.n_machines['bench_press'] = 2
+        self.n_machines['Leg_press'] = 1
+        self.n_machines['Bench_press'] = 2
+        self.n_machines['Pulley'] = 2
+        self.n_machines['Squat'] = 2
+        self.n_machines['Leg_extension'] = 1
+        self.n_machines['Scott_machine'] = 1
+        self.n_machines['Pulldown'] = 2
+        self.n_machines['Treadmill'] = 4
+        self.n_machines['Bike'] = 4
 
-        self.semaphores['leg_press'] = Semaphore(self.n_machines['leg_press'])
-        self.semaphores['bench_press'] = Semaphore(self.n_machines['bench_press'])
+        for machine in self.available_machines:
+            self.semaphores[machine] = Semaphore(self.n_machines[machine])
 
         try:
             table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
