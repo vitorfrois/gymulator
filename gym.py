@@ -44,11 +44,8 @@ progress_table.add_row(
 
 
 def recreate_table(available_machines, n_machines, semaphores):
-    print(available_machines)
-    print(n_machines)
-    print(semaphores, "\n\n")
     for task in table.tasks:
-        table.remove_task(task)
+        table.remove_task(task.id)
     for elem in available_machines:
         table.add_task(elem + " " + str(semaphores[elem]._value) + " / " + str(n_machines[elem]))
     return table
@@ -64,7 +61,6 @@ def init_live():
                     job_progress.advance(job.id, advance=1)
                 else:
                     job_progress.remove_task(job.id)
-                    #live.update(generate_table())
 class Gym:
     def __init__(self):
         self.available_machines = [
@@ -95,19 +91,15 @@ class Gym:
         # This will be the target for maromba's thread. It should execute various
         # exercises during the existence of that maromba.
         n_exercices = randint(1, len(self.available_machines))
-        # print(bcolors.WARNING + f"{person_name} has just started and will be doing {n_exercices} exercises." + bcolors.ENDC)
         console.add_row(f"{person_name} has just started and will be doing {n_exercices} exercises.")
 
         for _ in range(n_exercices):
             machine = choice(self.available_machines)
-            # print(bcolors.OKBLUE + f"{person_name} wants to use {machine}!" + bcolors.ENDC)
             console.add_row(f"{person_name} wants to use {machine}!")
             
             exercise = Thread(target=self.use_machine , args=(machine, person_name,))
             exercise.start()
             exercise.join()
-        # console = Table()
-
 
     def use_machine(self, machine: str, person_name: str):
         if machine not in self.n_machines:
@@ -123,26 +115,25 @@ class Gym:
         reps = randint(2, 4)
         
         console.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
-        # console.add_row(f"{semaphore._value}/{n_machines} available.")
         
         try:
-            job_progress.update(generate_bar(person_name, reps))
             table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
         except:
             pass
 
+        try:
+            job_progress.update(generate_bar(person_name, reps, display_name))
+        except:
+            pass
 
         for _ in range(reps):
             time.sleep(REP_INTERVAL)
 
         semaphore.release()
-        # table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
 
         try:
-            # a = 10
             table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
         except:
             pass
-        console.add_row(f"{person_name} finished using {display_name}")
-        # console.add_row(f"{semaphore._value}/{n_machines} available.")
 
+        console.add_row(f"{person_name} finished using {display_name}")
