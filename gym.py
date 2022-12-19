@@ -20,10 +20,12 @@ table = Progress(
     "{task.description}"
     )
 
-def generate_bar(person='Pessoa', reps=5, machine='MachineName') -> Progress:
-    # job_progress.add_task("[green]Cooking")
-    job_progress.add_task(f"{person} using {machine} ", total=reps, visible=True)
-    return job_progress
+level = Progress(
+    "Level: ",
+    BarColumn(),
+    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+)
+
 
 console = Table().grid()
 consoleExc = Table().grid()
@@ -31,8 +33,8 @@ consoleFim = Table().grid()
 
 progress_table = Table(expand=False).grid()
 progress_table.add_row(
-    Panel.fit("GYMULATOR"),
-    Panel.fit(table, width=30, title="Available Machines", border_style="red")
+    Panel.fit("G Y M U L A T O R"),
+    # Panel.fit(level, width=50, title="[b]Level", border_style="red")
 )
 
 progress_table.add_row(
@@ -40,9 +42,14 @@ progress_table.add_row(
     Panel.fit(table, width=50, title="Available Machines", border_style="red"),
 )
 progress_table.add_row(
-    Panel.fit(console, width=50, title="[b]People Started", border_style="red"),
-    Panel.fit(consoleExc, width=50, title="[b]Console Exercise", border_style="red")
+    Panel.fit(console, width=50, title="[b]People Started", border_style="yellow"),
+    Panel.fit(consoleExc, width=50, title="[b]Console Exercise", border_style="yellow")
 )
+
+def generate_bar(person='Pessoa', reps=5, machine='MachineName') -> Progress:
+    # job_progress.add_task("[green]Cooking")
+    job_progress.add_task(f"{person} using {machine} ", total=reps, visible=True)
+    return job_progress
 
 def recreate_table(available_machines, n_machines, semaphores):
     for task in table.tasks:
@@ -104,6 +111,13 @@ class Gym:
         thread = Thread(target=init_live)
         thread.start()
 
+        self.level = 1
+
+    def uplevel(self):
+        self.level += 1
+        for machine in self.n_machines:
+            machine += random.randint(1)
+
     def start_training(self, person_name: str):
         # This will be the target for maromba's thread. It should execute various
         # exercises during the existence of that maromba.
@@ -131,7 +145,7 @@ class Gym:
 
         reps = randint(2, 4)
         
-        consoleExc.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
+        # consoleExc.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
         
         try:
             table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
