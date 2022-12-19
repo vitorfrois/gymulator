@@ -8,12 +8,10 @@ from rich.live import Live
 from rich.panel import Panel
 
 REP_INTERVAL = 2 # seconds
-
 playing = True
 
 job_progress = Progress(
     "{task.description}",
-    # SpinnerColumn(),
     BarColumn(),
     TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
 )
@@ -28,6 +26,8 @@ def generate_bar(person='Pessoa', reps=5, machine='MachineName') -> Progress:
     return job_progress
 
 console = Table()
+consoleExc = Table()
+consoleFim = Table()
 
 progress_table = Table(expand=False).grid()
 progress_table.add_row(
@@ -36,31 +36,33 @@ progress_table.add_row(
 
 progress_table.add_row(
     Panel.fit(job_progress, width=50, title="[b]Jobs", border_style="red"),
-    Panel.fit(table, width=30, title="Available Machines", border_style="red"),
+    Panel.fit(table, width=50, title="Available Machines", border_style="red"),
 )
 progress_table.add_row(
-    Panel.fit(console, width=80, title="[b]Log", border_style="red")
+    Panel.fit(console, width=50, title="[b]People Started", border_style="red"),
+    Panel.fit(consoleExc, width=50, title="[b]Console Exercise", border_style="red")
 )
-
 
 def recreate_table(available_machines, n_machines, semaphores):
     for task in table.tasks:
         table.remove_task(task.id)
     for elem in available_machines:
         table.add_task(elem + " " + str(semaphores[elem]._value) + " / " + str(n_machines[elem]))
-    return table
-               
+    return table  
 
 def init_live():
+    startTask = False
     live = Live(progress_table, refresh_per_second=10)
     with live:
-        while playing:
+        while playing and (len(job_progress.tasks) > 0 or not startTask):
             time.sleep(REP_INTERVAL)
             for job in job_progress.tasks:
+                startTask = True
                 if not job.finished:
                     job_progress.advance(job.id, advance=1)
                 else:
                     job_progress.remove_task(job.id)
+
 class Gym:
     def __init__(self):
         self.available_machines = [
@@ -114,7 +116,7 @@ class Gym:
 
         reps = randint(2, 4)
         
-        console.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
+        consoleExc.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
         
         try:
             table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
@@ -136,4 +138,4 @@ class Gym:
         except:
             pass
 
-        console.add_row(f"{person_name} finished using {display_name}")
+        consoleExc.add_row(f"{person_name} finished using {display_name}")
