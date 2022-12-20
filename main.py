@@ -5,6 +5,8 @@ import names
 
 def main():
     comand = " "
+    # simulate gym levels: simulate forever increasing gym lvl according to exercise finishes
+    # simulate without levels: simulate only a few people doing a few exercises
     while comand != "y" and comand != "n":
         comand = input("Simulate gym levels? (y) (n): ").lower()
 
@@ -17,7 +19,7 @@ def main():
             for i in range(5*gym.level):
                 time.sleep(randint(2, 5))
 
-                name = random.choice(names.names)        
+                name = random.choice(names.names)   
                 maromba = Thread(target=gym.start_training , args=(name,))
                 maromba.start()
     else:

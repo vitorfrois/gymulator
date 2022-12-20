@@ -12,6 +12,7 @@ import random
 REP_INTERVAL = 2 # seconds
 playing = True
 
+# visual elements
 job_progress = Progress(
     "{task.description}",
     BarColumn(),
@@ -25,7 +26,6 @@ table = Progress(
 level_table = Progress(
     "{task.description}"
 )
-
 
 console = Table().grid()
 consoleExc = Table().grid()
@@ -46,11 +46,12 @@ progress_table.add_row(
     Panel.fit(consoleExc, width=50, title="[b]Finish Log", border_style="yellow")
 )
 
+# generates a progress bar of a person doing a exercise
 def generate_bar(person='Pessoa', reps=5, machine='MachineName') -> Progress:
-    # job_progress.add_task("[green]Cooking")
     job_progress.add_task(f"{person} using {machine} ", total=reps, visible=True)
     return job_progress
 
+# recreates the table of available machines
 def recreate_table(available_machines, n_machines, semaphores):
     for task in table.tasks:
         table.remove_task(task.id)
@@ -64,6 +65,7 @@ def update_level_table(level):
     level_table.add_task(f" {level} ", total=level)
     return level_table
 
+# starts the simulation with the dynamic elements in the console
 def init_live():
     startTask = False
     live = Live(progress_table, refresh_per_second=10)
@@ -106,6 +108,7 @@ class Gym:
         self.n_machines['Treadmill'] = 4
         self.n_machines['Bike'] = 4
 
+        # create semaphore for each machine
         for machine in self.available_machines:
             self.semaphores[machine] = Semaphore(self.n_machines[machine])
 
@@ -121,8 +124,6 @@ class Gym:
 
     def uplevel(self):
         self.level += 1
-        # for machine in self.n_machines:
-        #     machine += randint(0,1)
         global REP_INTERVAL
         REP_INTERVAL /= 1.1
         try:
@@ -148,7 +149,6 @@ class Gym:
         if machine not in self.n_machines:
             raise KeyError("Unknown machine!")
 
-        n_machines = self.n_machines[machine]
         semaphore = self.semaphores[machine]
 
         display_name = machine.replace("_", " ").title()
@@ -157,13 +157,10 @@ class Gym:
 
         reps = randint(2, 4)
         
-        # consoleExc.add_row(f"{person_name} will be doing {reps} reps of {display_name}")
-        
         try:
             table.update(recreate_table(self.available_machines, self.n_machines, self.semaphores))
         except:
             pass
-
         try:
             job_progress.update(generate_bar(person_name, reps, display_name))
         except:
