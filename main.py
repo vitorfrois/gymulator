@@ -4,16 +4,27 @@ import names
 
 
 def main():
+    comand = input("Simulate academy levels? (y) (n)")
+    while comand != "y" and comand != "n":
+        comand = input("Simulate academy levels? (y) (n)")
+
     gym = Gym()
     console = Console()
     console.clear()
-    while playing:
-        gym.uplevel()
-        for i in range(5*gym.level):
-            time.sleep(randint(2, 5))
+    if(comand == "y"):
+        while playing:
+            gym.uplevel()
+            for i in range(5*gym.level):
+                time.sleep(randint(2, 5))
 
-            name = random.choice(names.names)        
-            maromba = Thread(target=gym.start_training , args=(name,))
+                name = random.choice(names.names)        
+                maromba = Thread(target=gym.start_training , args=(name,))
+                maromba.start()
+    else:
+        for i in range(5):
+            time.sleep(randint(2, 5))
+            
+            maromba = Thread(target=gym.start_training , args=(f'Maromba{i}',))
             maromba.start()
 
 if __name__ == '__main__':
