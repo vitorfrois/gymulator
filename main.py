@@ -4,9 +4,9 @@ import names
 
 
 def main():
-    comand = input("Simulate gym levels? (y) (n)")
+    comand = input("Simulate gym levels? (y) (n): ")
     while comand != "y" and comand != "n":
-        comand = input("Simulate gym levels? (y) (n)")
+        comand = input("Simulate gym levels? (y) (n): ")
 
     gym = Gym()
     console = Console()
@@ -24,7 +24,8 @@ def main():
         for i in range(5):
             time.sleep(randint(2, 5))
             
-            maromba = Thread(target=gym.start_training , args=(f'Maromba{i}',))
+            name = random.choice(names.names)        
+            maromba = Thread(target=gym.start_training , args=(name,))
             maromba.start()
 
 if __name__ == '__main__':
