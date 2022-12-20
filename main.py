@@ -4,9 +4,9 @@ import names
 
 
 def main():
-    comand = input("Simulate academy levels? (y) (n)")
+    comand = input("Simulate gym levels? (y) (n)")
     while comand != "y" and comand != "n":
-        comand = input("Simulate academy levels? (y) (n)")
+        comand = input("Simulate gym levels? (y) (n)")
 
     gym = Gym()
     console = Console()
